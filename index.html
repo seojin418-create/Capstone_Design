@@ -73,6 +73,10 @@ tbody tr:hover{background:var(--bg)}
 tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
 footer{margin-top:20px;font-size:12px;color:var(--muted)}
 footer a{color:var(--accent)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+.tabs button{border:1px solid var(--line);border-bottom:0;background:var(--bg);color:var(--muted);padding:8px 14px;border-radius:10px 10px 0 0;font:inherit;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--ink);font-weight:500}
+.tabs + section.tbl, .tab-panel{margin-top:0 !important;border-top-left-radius:0}
 .leaflet-container{font:inherit}
 .tnote{margin:0;padding:8px 12px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
 table.lt td:nth-child(2),table.lt th:nth-child(2){text-align:left}
@@ -131,7 +135,38 @@ table.lt td:first-child{text-align:left}
   </aside>
 </div>
 
-<section class="card tbl">
+<div class="tabs" role="tablist">
+  <button role="tab" data-t="B" class="on">부록 B · 빗물이용시설 38개소</button>
+  <button role="tab" data-t="C">부록 C · 법적시설 7개소</button>
+  <button role="tab" data-t="D">부록 D · 격자 220칸</button>
+</div>
+<section class="card tbl tab-panel" id="tab-B">
+  <div class="tbar">
+    <b style="font-size:14px">표 B-1. 빗물이용시설 38개소 판정</b>
+    <select id="b-kind"><option value="">구분 전체</option><option value="Y">법적시설</option><option value="N">의무 외 시설</option></select>
+    <select id="b-judge"><option value="">판정 전체</option><option>부합</option><option>경계</option><option>취약도 낮음</option><option>판단 불가</option></select>
+    <span class="cnt" id="b-cnt"></span>
+    <a href="data/facilities_38.csv" download>CSV 받기</a>
+  </div>
+  <p class="tnote">시설은 그 시설이 있는 격자의 등급으로 판정했습니다. 4~5등급은 부합, 지수 3.33인 3등급은 경계, 그 밖은 취약도 낮음이며, 위치를 확인하지 못한 14개소는 판단 불가로 두었습니다. 줄을 누르면 지도에서 그 격자를 보여 줍니다.</p>
+  <div class="scroll">
+    <table class="lt" id="bt"><thead><tr><th>번호</th><th>시설명</th><th>구분</th><th>격자 ID</th><th>표고점</th><th>경사점</th><th>시가화점</th><th>지수</th><th>등급</th><th>판정</th></tr></thead><tbody id="b-body"></tbody></table>
+  </div>
+</section>
+
+<section class="card tbl tab-panel" id="tab-C" hidden>
+  <div class="tbar">
+    <b style="font-size:14px">표 C-1. 법적시설 7개소 건축물대장과 시설 현황</b>
+    <span class="cnt"></span>
+    <a href="data/legal_7.csv" download>CSV 받기</a>
+  </div>
+  <p class="tnote">건축물대장(세움터)과 성남시 빗물이용시설 현황의 내용을 함께 정리했습니다. 공동주택 3곳의 건축면적과 연면적은 시설이 있는 1개 동의 값입니다. 7개소 모두 2014년부터 2022년 사이에 사용승인을 받았고, 빗물은 모두 조경용수로 씁니다.</p>
+  <div class="scroll">
+    <table class="lt" id="ct"><thead><tr><th>시설명</th><th>주용도</th><th>사용승인일</th><th>건축면적(㎡)</th><th>연면적(㎡)</th><th>집수면적(㎡)</th><th>저류조(㎥)</th><th>처리공정</th><th>등급</th><th>판정</th></tr></thead><tbody id="c-body"></tbody></table>
+  </div>
+</section>
+
+<section class="card tbl tab-panel" id="tab-D" hidden>
   <div class="tbar">
     <b style="font-size:14px">표 D-1. 격자별 지표 점수</b>
     <select id="f-grade"><option value="">등급 전체</option><option value="45">4~5등급</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
@@ -146,32 +181,6 @@ table.lt td:first-child{text-align:left}
       <thead><tr id="thead"></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
-  </div>
-</section>
-
-<section class="card tbl">
-  <div class="tbar">
-    <b style="font-size:14px">표 B-1. 빗물이용시설 38개소 판정</b>
-    <select id="b-kind"><option value="">구분 전체</option><option value="Y">법적시설</option><option value="N">의무 외 시설</option></select>
-    <select id="b-judge"><option value="">판정 전체</option><option>부합</option><option>경계</option><option>취약도 낮음</option><option>판단 불가</option></select>
-    <span class="cnt" id="b-cnt"></span>
-    <a href="data/facilities_38.csv" download>CSV 받기</a>
-  </div>
-  <p class="tnote">시설은 그 시설이 있는 격자의 등급으로 판정했습니다. 4~5등급은 부합, 지수 3.33인 3등급은 경계, 그 밖은 취약도 낮음이며, 위치를 확인하지 못한 14개소는 판단 불가로 두었습니다. 줄을 누르면 지도에서 그 격자를 보여 줍니다.</p>
-  <div class="scroll">
-    <table class="lt" id="bt"><thead><tr><th>번호</th><th>시설명</th><th>구분</th><th>격자 ID</th><th>표고점</th><th>경사점</th><th>시가화점</th><th>지수</th><th>등급</th><th>판정</th></tr></thead><tbody id="b-body"></tbody></table>
-  </div>
-</section>
-
-<section class="card tbl">
-  <div class="tbar">
-    <b style="font-size:14px">표 C-1. 법적시설 7개소 건축물대장과 시설 현황</b>
-    <span class="cnt"></span>
-    <a href="data/legal_7.csv" download>CSV 받기</a>
-  </div>
-  <p class="tnote">건축물대장(세움터)과 성남시 빗물이용시설 현황의 내용을 함께 정리했습니다. 공동주택 3곳의 건축면적과 연면적은 시설이 있는 1개 동의 값입니다. 7개소 모두 2014년부터 2022년 사이에 사용승인을 받았고, 빗물은 모두 조경용수로 씁니다.</p>
-  <div class="scroll">
-    <table class="lt" id="ct"><thead><tr><th>시설명</th><th>주용도</th><th>사용승인일</th><th>건축면적(㎡)</th><th>연면적(㎡)</th><th>집수면적(㎡)</th><th>저류조(㎥)</th><th>처리공정</th><th>등급</th><th>판정</th></tr></thead><tbody id="c-body"></tbody></table>
   </div>
 </section>
 
@@ -359,6 +368,11 @@ function ctable(d){
   const tr = e.target.closest('tr'); if (!tr || !tr.dataset.g) return;
   select(+tr.dataset.g, true); document.getElementById('map').scrollIntoView({behavior: 'smooth', block: 'center'});
 }));
+document.querySelector('.tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab-panel').forEach(x => x.hidden = x.id !== 'tab-' + b.dataset.t);
+});
 </script>
 </body>
 </html>
