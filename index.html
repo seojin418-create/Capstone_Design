@@ -74,6 +74,12 @@ tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
 footer{margin-top:20px;font-size:12px;color:var(--muted)}
 footer a{color:var(--accent)}
 .leaflet-container{font:inherit}
+.tnote{margin:0;padding:8px 12px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
+table.lt td:nth-child(2),table.lt th:nth-child(2){text-align:left}
+table.lt td,table.lt th{text-align:right}
+table.lt td:first-child{text-align:left}
+#ct th:nth-child(-n+2),#ct td:nth-child(-n+2),#ct th:nth-child(8),#ct td:nth-child(8),#bt th:nth-child(3),#bt td:nth-child(3){text-align:left}
+.muted{color:var(--muted)}
 @media (max-width:900px){
   .main{grid-template-columns:1fr}
   .tiles{grid-template-columns:repeat(2,1fr)}
@@ -85,7 +91,7 @@ footer a{color:var(--accent)}
 <div class="wrap">
 <header>
   <h1>성남시 수정구 500 m 격자별 침수 취약도</h1>
-  <p>캡스톤디자인 최종보고서 「빗물이용시설의 침수 취약지 부합도 점검」 부록 D · 김찬영 · 이서진</p>
+  <p>캡스톤디자인 최종보고서 「빗물이용시설의 침수 취약지 부합도 점검」 부록 B · C · D · 김찬영 · 이서진</p>
 </header>
 
 <div class="tiles">
@@ -143,8 +149,34 @@ footer a{color:var(--accent)}
   </div>
 </section>
 
+<section class="card tbl">
+  <div class="tbar">
+    <b style="font-size:14px">표 B-1. 빗물이용시설 38개소 판정</b>
+    <select id="b-kind"><option value="">구분 전체</option><option value="Y">법적시설</option><option value="N">의무 외 시설</option></select>
+    <select id="b-judge"><option value="">판정 전체</option><option>부합</option><option>경계</option><option>취약도 낮음</option><option>판단 불가</option></select>
+    <span class="cnt" id="b-cnt"></span>
+    <a href="data/facilities_38.csv" download>CSV 받기</a>
+  </div>
+  <p class="tnote">시설은 그 시설이 있는 격자의 등급으로 판정했습니다. 4~5등급은 부합, 지수 3.33인 3등급은 경계, 그 밖은 취약도 낮음이며, 위치를 확인하지 못한 14개소는 판단 불가로 두었습니다. 줄을 누르면 지도에서 그 격자를 보여 줍니다.</p>
+  <div class="scroll">
+    <table class="lt" id="bt"><thead><tr><th>번호</th><th>시설명</th><th>구분</th><th>격자 ID</th><th>표고점</th><th>경사점</th><th>시가화점</th><th>지수</th><th>등급</th><th>판정</th></tr></thead><tbody id="b-body"></tbody></table>
+  </div>
+</section>
+
+<section class="card tbl">
+  <div class="tbar">
+    <b style="font-size:14px">표 C-1. 법적시설 7개소 건축물대장과 시설 현황</b>
+    <span class="cnt"></span>
+    <a href="data/legal_7.csv" download>CSV 받기</a>
+  </div>
+  <p class="tnote">건축물대장(세움터)과 성남시 빗물이용시설 현황의 내용을 함께 정리했습니다. 공동주택 3곳의 건축면적과 연면적은 시설이 있는 1개 동의 값입니다. 7개소 모두 2014년부터 2022년 사이에 사용승인을 받았고, 빗물은 모두 조경용수로 씁니다.</p>
+  <div class="scroll">
+    <table class="lt" id="ct"><thead><tr><th>시설명</th><th>주용도</th><th>사용승인일</th><th>건축면적(㎡)</th><th>연면적(㎡)</th><th>집수면적(㎡)</th><th>저류조(㎥)</th><th>처리공정</th><th>등급</th><th>판정</th></tr></thead><tbody id="c-body"></tbody></table>
+  </div>
+</section>
+
 <footer>
-  자료: 국토정보플랫폼 DEM(10 m), 환경부 세분류 토지피복지도(2025), 통계청 SGIS 행정경계(2025년 2분기), 국가공간정보포털 GIS건물통합정보(2026-09), 경기도 성남시 빗물이용시설 현황(2026-04-01).<br>
+  자료: 국토정보플랫폼 DEM(10 m), 환경부 세분류 토지피복지도(2025), 통계청 SGIS 행정경계(2025년 2분기), 국가공간정보포털 GIS건물통합정보(2026-09), 경기도 성남시 빗물이용시설 현황(2026-04-01), 세움터 건축물대장.<br>
   동 이름은 격자 안 건물이 가장 많은 법정동이며, 건물이 없는 격자는 "-"로 표시했습니다. 시설 점의 색은 그 시설이 있는 격자의 등급입니다. 배경지도(선택) © OpenStreetMap.
 </footer>
 </div>
@@ -280,6 +312,8 @@ Promise.all(['data/grid.geojson', 'data/facilities.geojson', 'data/boundary.geoj
   const dongs = [...new Set(grid.features.map(x => x.properties['동']).filter(x => x !== '-'))].sort((a, b) => a.localeCompare(b, 'ko'));
   document.getElementById('f-dong').insertAdjacentHTML('beforeend', dongs.map(x => `<option>${x}</option>`).join('') + '<option value="-">건물 없음(-)</option>');
   table();
+  fetch('data/facilities_38.json').then(r => r.json()).then(d => { B = d; btable(); });
+  fetch('data/legal_7.json').then(r => r.json()).then(ctable);
 }).catch(e => { document.getElementById('map').innerHTML = '<p style="padding:16px">자료를 불러오지 못했습니다. 웹 서버(깃허브 페이지 등)에서 열어 주세요.</p>'; console.error(e); });
 
 document.getElementById('layer').addEventListener('click', e => {
@@ -304,6 +338,27 @@ document.getElementById('thead').addEventListener('click', e => {
 document.getElementById('tbody').addEventListener('click', e => {
   const tr = e.target.closest('tr'); if (tr) { select(+tr.dataset.id, true); document.getElementById('map').scrollIntoView({behavior: 'smooth', block: 'center'}); }
 });
+let B = [];
+const judge = j => j === '판단 불가' ? `<span class="muted">${j}</span>` : j === '부합' ? `<b style="font-weight:500">${j}</b>` : j;
+function btable(){
+  const k = document.getElementById('b-kind').value, j = document.getElementById('b-judge').value;
+  const r = B.filter(x => (!k || x['법적시설'] === k) && (!j || x['판정'] === j));
+  const n = v => v == null ? '<span class="muted">-</span>' : v;
+  document.getElementById('b-body').innerHTML = r.map(x => `<tr data-g="${x['격자 ID'] ?? ''}"><td>${x['연번']}</td><td>${x['시설명']}${x['판단 불가 이유'] ? ` <span class="muted">(${x['판단 불가 이유']})</span>` : ''}</td><td>${x['법적시설'] === 'Y' ? '법적' : '의무 외'}</td>` +
+    ['격자 ID','표고 점수','경사 점수','시가화 점수'].map(c => `<td>${n(x[c] == null ? null : Math.round(x[c]))}</td>`).join('') +
+    `<td>${n(x['지수'] == null ? null : x['지수'].toFixed(2))}</td><td>${n(x['등급'] == null ? null : Math.round(x['등급']))}</td><td>${judge(x['판정'])}</td></tr>`).join('');
+  document.getElementById('b-cnt').textContent = `${r.length}곳 표시`;
+}
+function ctable(d){
+  const cols = ['시설명','건축물 주용도','사용승인일','건축면적(㎡)','연면적(㎡)','집수면적(㎡)','저류조 용량(㎥)','처리공정'];
+  document.getElementById('c-body').innerHTML = d.map(x => `<tr data-g="${x['격자 ID'] ?? ''}">` + cols.map(c => `<td>${x[c]}</td>`).join('') +
+    `<td>${Math.round(x['등급'])}</td><td>${judge(x['판정'])}</td></tr>`).join('');
+}
+['b-kind','b-judge'].forEach(id => document.getElementById(id).addEventListener('change', btable));
+['b-body','c-body'].forEach(id => document.getElementById(id).addEventListener('click', e => {
+  const tr = e.target.closest('tr'); if (!tr || !tr.dataset.g) return;
+  select(+tr.dataset.g, true); document.getElementById('map').scrollIntoView({behavior: 'smooth', block: 'center'});
+}));
 </script>
 </body>
 </html>
