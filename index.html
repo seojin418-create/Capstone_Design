@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수정구 격자 취약도</title>
+<meta name="description" content="빗물이용시설의 침수 취약지 부합도 점검 — 성남시 수정구 500 m 격자 220칸의 지표 점수 (최종보고서 부록 D)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#1b1f24; --muted:#5d6671; --line:#e2e5ea; --accent:#1f5fbf;
+  --hl:#e8590c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --card:#1b1f24; --ink:#e8eaed; --muted:#9aa3ad; --line:#2c323a; --accent:#7fb0ff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --card:#1b1f24; --ink:#e8eaed; --muted:#9aa3ad; --line:#2c323a; --accent:#7fb0ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Noto Sans KR","Malgun Gothic",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 48px}
+header h1{font-size:22px;margin:0 0 4px;font-weight:700}
+header p{margin:0;color:var(--muted);font-size:14px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile b{display:block;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:13px}
+.main{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:#fff}
+label.ck{display:inline-flex;gap:5px;align-items:center;cursor:pointer;font-size:13px}
+#map{height:600px;background:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:8px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.15)}
+.legend i.dot{border-radius:50%}
+.side{padding:16px}
+.side h2{font-size:16px;margin:0 0 8px}
+.side .hint{color:var(--muted);font-size:13px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:8px 0 0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:500;color:#fff}
+.score{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px}
+.score .lab{width:56px;color:var(--muted)}
+.score .track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.score .fill{height:100%;background:var(--accent)}
+.score .n{width:14px;text-align:right;font-variant-numeric:tabular-nums}
+.fac{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px}
+.fac div{margin:4px 0}
+.method{margin-top:16px;font-size:13px;color:var(--muted)}
+.method b{color:var(--ink)}
+section.tbl{margin-top:16px}
+.tbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.tbar select,.tbar input{font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.tbar input{width:110px}
+.tbar .cnt{color:var(--muted);margin-left:auto}
+.tbar a{color:var(--accent)}
+.scroll{max-height:520px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:nth-child(2),td:nth-child(2){text-align:left}
+th{position:sticky;top:0;background:var(--card);color:var(--muted);font-weight:500;cursor:pointer;user-select:none}
+th.sorted{color:var(--ink)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--bg)}
+tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
+footer{margin-top:20px;font-size:12px;color:var(--muted)}
+footer a{color:var(--accent)}
+.leaflet-container{font:inherit}
+@media (max-width:900px){
+  .main{grid-template-columns:1fr}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  #map{height:420px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>성남시 수정구 500 m 격자별 침수 취약도</h1>
+  <p>캡스톤디자인 최종보고서 「빗물이용시설의 침수 취약지 부합도 점검」 부록 D · 김찬영 · 이서진</p>
+</header>
+
+<div class="tiles">
+  <div class="tile"><b>220칸</b><span>분석한 500 m 격자</span></div>
+  <div class="tile"><b id="t-vul">65칸</b><span id="t-vul2">4~5등급 (취약)</span></div>
+  <div class="tile"><b>24곳</b><span>지도에 위치를 확인한 시설 (38곳 중)</span></div>
+  <div class="tile"><b id="t-gap">48칸</b><span>시설이 없는 4~5등급 격자</span></div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="bar">
+      <div class="seg" id="layer">
+        <button data-k="등급" class="on">종합 등급</button>
+        <button data-k="표고 점수">표고</button>
+        <button data-k="경사 점수">경사</button>
+        <button data-k="시가화 점수">시가화</button>
+      </div>
+      <label class="ck"><input type="checkbox" id="ck-fac" checked> 빗물이용시설</label>
+      <label class="ck"><input type="checkbox" id="ck-gap"> 시설 없는 4~5등급만 보기</label>
+      <label class="ck"><input type="checkbox" id="ck-bg"> 배경지도</label>
+    </div>
+    <div id="map"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <aside class="card side" id="side">
+    <h2>격자를 눌러 보세요</h2>
+    <p class="hint">지도의 격자나 아래 표의 줄을 누르면 그 격자의 표고, 경사, 시가화 값과 점수가 여기에 나옵니다.</p>
+    <div class="method">
+      <p><b>점수 매기는 법</b><br>
+      표고와 경사는 낮을수록, 시가화 비율은 높을수록 점수가 높습니다(1~5점).<br>
+      표고 100 / 200 / 300 / 400 m, 경사 5 / 10 / 15 / 20°, 시가화 20 / 40 / 60 / 80 %로 나눕니다.</p>
+      <p><b>지수와 등급</b><br>
+      지수는 세 점수의 평균이고, 1.8 / 2.6 / 3.4 / 4.2를 기준으로 1~5등급으로 나눕니다. 4~5등급을 침수 취약 격자로 봅니다.</p>
+    </div>
+  </aside>
+</div>
+
+<section class="card tbl">
+  <div class="tbar">
+    <b style="font-size:14px">표 D-1. 격자별 지표 점수</b>
+    <select id="f-grade"><option value="">등급 전체</option><option value="45">4~5등급</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+    <select id="f-dong"><option value="">동 전체</option></select>
+    <select id="f-fac"><option value="">시설 전체</option><option value="1">시설 있음</option><option value="0">시설 없음</option></select>
+    <input id="f-id" placeholder="격자 ID" inputmode="numeric">
+    <span class="cnt" id="cnt"></span>
+    <a href="data/appendix_D_220grid.csv" download>CSV 받기</a>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  자료: 국토정보플랫폼 DEM(10 m), 환경부 세분류 토지피복지도(2025), 통계청 SGIS 행정경계(2025년 2분기), 국가공간정보포털 GIS건물통합정보(2026-09), 경기도 성남시 빗물이용시설 현황(2026-04-01).<br>
+  동 이름은 격자 안 건물이 가장 많은 법정동이며, 건물이 없는 격자는 "-"로 표시했습니다. 시설 점의 색은 그 시설이 있는 격자의 등급입니다. 배경지도(선택) © OpenStreetMap.
+</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const PAL = {
+  '등급':       [null, '#f7fbff', '#c6dbef', '#6baed6', '#2171b5', '#08306b'],
+  '표고 점수':  [null, '#fff5eb', '#fdd0a2', '#fd8d3c', '#d94801', '#7f2704'],
+  '경사 점수':  [null, '#f7fcf5', '#c7e9c0', '#74c476', '#238b45', '#00441b'],
+  '시가화 점수':[null, '#fcfbfd', '#dadaeb', '#9e9ac8', '#6a51a3', '#3f007d']};
+const GRADE = () => PAL[layerKey];
+const DOT = [null, '#b9b9b9', '#91cf60', '#fee08b', '#fdae61', '#d73027'];  // 시설이 있는 격자의 등급 (발표 지도와 같은 색)
+const LABELS = {'등급':'종합 등급','표고 점수':'표고 점수','경사 점수':'경사 점수','시가화 점수':'시가화 점수'};
+const COLS = [['격자 ID','ID'],['동','동'],['평균 표고(m)','표고(m)'],['평균 경사(°)','경사(°)'],['시가화 비율(%)','시가화(%)'],
+  ['표고 점수','표고점'],['경사 점수','경사점'],['시가화 점수','시가화점'],['지수','지수'],['등급','등급'],['시설 수','시설'],['건물 수','건물']];
+
+let layerKey = '등급', onlyGap = false, bgOn = false, selId = null, sortKey = '격자 ID', sortDir = 1;
+let grid, facs, gridLayer, facLayer, byId = {};
+
+const map = L.map('map', {zoomSnap: .25, attributionControl: true});
+const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {maxZoom: 18, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
+let mask;
+
+const isGap = p => p['등급'] >= 4 && p['시설 수'] === 0;
+
+function styleCell(f){
+  const p = f.properties, c = GRADE();
+  const dim = onlyGap && !isGap(p);
+  const sel = p['격자 ID'] === selId;
+  return {color: sel ? css('--hl') : '#2b2b2b', weight: sel ? 3 : .5, opacity: dim ? .25 : .8,
+    fillColor: c[p[layerKey]], fillOpacity: dim ? .12 : (bgOn ? .8 : 1)};
+}
+
+function legend(){
+  const c = GRADE(), el = document.getElementById('legend');
+  const names = layerKey === '등급' ? ['1등급','2등급','3등급','4등급','5등급'] : ['1점','2점','3점','4점','5점'];
+  const rng = ['1 - 1.8','1.8 - 2.6','2.6 - 3.4','3.4 - 4.2','4.2 - 5'];
+  let h = `<span>${LABELS[layerKey]}</span>` + names.map((n,i) => `<span><i style="background:${c[i+1]}"></i>${n}${layerKey==='등급'?' ('+rng[i]+')':''}</span>`).join('');
+  if (document.getElementById('ck-fac').checked){
+    h += '<span style="margin-left:8px">시설이 있는 격자 등급</span>' + [2,3,4,5].map(k => `<span><i class="dot" style="background:${DOT[k]}"></i>${k}</span>`).join('');
+  }
+  el.innerHTML = h;
+}
+
+function pill(g){ const c = PAL['등급'][g]; return `<span class="pill" style="background:${c};color:${g<=2?'#222':'#fff'}">${g}등급</span>`; }
+
+function showSide(id){
+  const p = byId[id].feature.properties;
+  const here = facs.features.filter(f => f.properties['격자 ID'] === id).map(f => f.properties);
+  const bar = (lab, v) => `<div class="score"><span class="lab">${lab}</span><span class="track"><span class="fill" style="width:${v*20}%"></span></span><span class="n">${v}</span></div>`;
+  document.getElementById('side').innerHTML = `
+    <h2>격자 ${id} ${pill(p['등급'])}</h2>
+    <p class="hint" style="margin:0">${p['동'] === '-' ? '건물 없는 격자' : p['동'] + ' 일대'} · 지수 ${p['지수'].toFixed(2)}${isGap(p) ? ' · <b style="color:#d73027">시설 없는 취약 격자</b>' : ''}</p>
+    <dl class="kv">
+      <dt>평균 표고</dt><dd>${p['평균 표고(m)']} m</dd>
+      <dt>평균 경사</dt><dd>${p['평균 경사(°)']}°</dd>
+      <dt>시가화 비율</dt><dd>${p['시가화 비율(%)']} %</dd>
+      <dt>건물 수</dt><dd>${p['건물 수'].toLocaleString()}동</dd>
+    </dl>
+    <div style="margin-top:12px">${bar('표고', p['표고 점수'])}${bar('경사', p['경사 점수'])}${bar('시가화', p['시가화 점수'])}</div>
+    <div class="fac"><b>격자 안 빗물이용시설 ${here.length}곳</b>
+      ${here.map(f => `<div><i class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${DOT[f['등급']]};margin-right:5px"></i>${f['시설명']} · ${f['판정']}${f['법적시설']==='Y'?' · 법적시설':''}</div>`).join('') || '<div class="hint">없음</div>'}
+    </div>`;
+}
+
+function select(id, fly){
+  selId = id;
+  gridLayer.setStyle(styleCell);
+  byId[id].bringToFront();
+  if (fly) map.fitBounds(byId[id].getBounds(), {maxZoom: 14, padding: [80,80]});
+  showSide(id);
+  document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.toggle('sel', +tr.dataset.id === id));
+}
+
+function drawFacs(){
+  if (facLayer) facLayer.remove();
+  if (!document.getElementById('ck-fac').checked) return legend();
+  facLayer = L.geoJSON(facs, {pointToLayer: (f, ll) => L.circleMarker(ll, {
+      radius: f.properties['법적시설'] === 'Y' ? 8 : 6, color: '#555', weight: 1,
+      fillColor: DOT[f.properties['등급']], fillOpacity: 1})
+    .bindTooltip(`${f.properties['시설명']}<br>${f.properties['판정']} · 격자 ${f.properties['격자 ID']}${f.properties['법적시설']==='Y'?' · 법적시설':''}`)
+    .on('click', () => select(f.properties['격자 ID'], false))}).addTo(map);
+  legend();
+}
+
+function rows(){
+  const g = document.getElementById('f-grade').value, d = document.getElementById('f-dong').value,
+        fc = document.getElementById('f-fac').value, q = document.getElementById('f-id').value.trim();
+  return grid.features.map(f => f.properties).filter(p =>
+      (!g || (g === '45' ? p['등급'] >= 4 : p['등급'] === +g)) && (!d || p['동'] === d) &&
+      (!fc || (fc === '1' ? p['시설 수'] > 0 : p['시설 수'] === 0)) && (!q || String(p['격자 ID']).includes(q)))
+    .sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : a[sortKey] < b[sortKey] ? -1 : 0) * sortDir);
+}
+
+function table(){
+  document.getElementById('thead').innerHTML = COLS.map(([k, n]) =>
+    `<th data-k="${k}" class="${k===sortKey?'sorted':''}">${n}${k===sortKey?(sortDir>0?' ▲':' ▼'):''}</th>`).join('');
+  const r = rows(), c = PAL['등급'];
+  document.getElementById('tbody').innerHTML = r.map(p => `<tr data-id="${p['격자 ID']}" class="${p['격자 ID']===selId?'sel':''}">` +
+    COLS.map(([k]) => k === '등급'
+      ? `<td><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c[p[k]]};margin-right:5px"></i>${p[k]}</td>`
+      : `<td>${k === '지수' ? p[k].toFixed(2) : k === '건물 수' ? p[k].toLocaleString() : p[k]}</td>`).join('') + '</tr>').join('');
+  document.getElementById('cnt').textContent = `${r.length}칸 표시`;
+}
+
+Promise.all(['data/grid.geojson', 'data/facilities.geojson', 'data/boundary.geojson'].map(u => fetch(u).then(r => r.json())))
+.then(([g, f, b]) => {
+  grid = g; facs = f;
+  const holes = [];
+  b.features.forEach(ft => { const gm = ft.geometry; (gm.type === 'Polygon' ? [gm.coordinates] : gm.coordinates).forEach(pl => holes.push(pl[0].map(([x, y]) => [y, x]))); });
+  mask = L.polygon([[[-89, -179], [-89, 179], [89, 179], [89, -179]], ...holes], {stroke: false, fillColor: '#fff', fillOpacity: .85, interactive: false});
+  map.createPane('top').style.zIndex = 450;
+  map.getPane('top').style.pointerEvents = 'none';
+  const bnd = L.geoJSON(b, {pane: 'top', style: {color: '#1f5f9f', weight: 2.5, fill: false}, interactive: false});
+  gridLayer = L.geoJSON(grid, {style: styleCell, onEachFeature: (ft, ly) => {
+    byId[ft.properties['격자 ID']] = ly;
+    ly.bindTooltip(`격자 ${ft.properties['격자 ID']} · ${ft.properties['등급']}등급 · 지수 ${ft.properties['지수'].toFixed(2)}`, {sticky: true});
+    ly.on('click', () => select(ft.properties['격자 ID'], false));
+  }}).addTo(map);
+  bnd.addTo(map);
+  map.fitBounds(bnd.getBounds(), {padding: [10, 10]});
+  map.setMinZoom(map.getZoom() - .5); map.setMaxBounds(bnd.getBounds().pad(.4));
+  drawFacs();
+
+  const vul = grid.features.filter(x => x.properties['등급'] >= 4).length;
+  document.getElementById('t-vul').textContent = vul + '칸';
+  document.getElementById('t-vul2').textContent = `4~5등급 (전체의 ${(vul / grid.features.length * 100).toFixed(1)} %)`;
+  document.getElementById('t-gap').textContent = grid.features.filter(x => isGap(x.properties)).length + '칸';
+
+  const dongs = [...new Set(grid.features.map(x => x.properties['동']).filter(x => x !== '-'))].sort((a, b) => a.localeCompare(b, 'ko'));
+  document.getElementById('f-dong').insertAdjacentHTML('beforeend', dongs.map(x => `<option>${x}</option>`).join('') + '<option value="-">건물 없음(-)</option>');
+  table();
+}).catch(e => { document.getElementById('map').innerHTML = '<p style="padding:16px">자료를 불러오지 못했습니다. 웹 서버(깃허브 페이지 등)에서 열어 주세요.</p>'; console.error(e); });
+
+document.getElementById('layer').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  layerKey = b.dataset.k;
+  document.querySelectorAll('#layer button').forEach(x => x.classList.toggle('on', x === b));
+  gridLayer.setStyle(styleCell); legend();
+});
+document.getElementById('ck-fac').addEventListener('change', drawFacs);
+document.getElementById('ck-bg').addEventListener('change', e => {
+  bgOn = e.target.checked;
+  if (bgOn) { tiles.addTo(map); mask.addTo(map); } else { tiles.remove(); mask.remove(); }
+  gridLayer.setStyle(styleCell);
+});
+document.getElementById('ck-gap').addEventListener('change', e => { onlyGap = e.target.checked; gridLayer.setStyle(styleCell); });
+['f-grade', 'f-dong', 'f-fac'].forEach(id => document.getElementById(id).addEventListener('change', table));
+document.getElementById('f-id').addEventListener('input', table);
+document.getElementById('thead').addEventListener('click', e => {
+  const th = e.target.closest('th'); if (!th) return;
+  const k = th.dataset.k; sortDir = k === sortKey ? -sortDir : (k === '격자 ID' || k === '동' ? 1 : -1); sortKey = k; table();
+});
+document.getElementById('tbody').addEventListener('click', e => {
+  const tr = e.target.closest('tr'); if (tr) { select(+tr.dataset.id, true); document.getElementById('map').scrollIntoView({behavior: 'smooth', block: 'center'}); }
+});
+</script>
+</body>
+</html>
